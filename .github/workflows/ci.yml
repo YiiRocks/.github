@@ -59,7 +59,7 @@ jobs:
         run: vendor/bin/phpunit --colors=always
 
   psalm:
-    if: github.event_name != 'push' || github.ref == format('refs/heads/{0}', inputs.default-branch)
+    if: github.event_name != 'push'
 
     uses: yiisoft/actions/.github/workflows/psalm.yml@master
     with:
