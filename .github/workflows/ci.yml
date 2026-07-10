@@ -8,11 +8,6 @@ on:
         required: false
         type: string
         default: fileinfo
-      default-branch:
-        description: 'Default branch name. Used to skip the psalm job on pushes to non-default branches.'
-        required: false
-        type: string
-        default: main
 
 permissions:
   contents: read
@@ -59,8 +54,6 @@ jobs:
         run: vendor/bin/phpunit --colors=always
 
   psalm:
-    if: github.event_name != 'push'
-
     uses: yiisoft/actions/.github/workflows/psalm.yml@master
     with:
       os: >-
