@@ -30,7 +30,7 @@ jobs:
       - name: Install PHP with extensions.
         uses: shivammathur/setup-php@v2
         with:
-          coverage: none
+          coverage: pcov
           extensions: ${{ inputs.php-extensions }}
           ini-values: date.timezone='UTC'
           php-version: ${{ matrix.php }}
