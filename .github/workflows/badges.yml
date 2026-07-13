@@ -51,24 +51,34 @@ jobs:
 
       - name: Generate badge JSONs.
         run: |
-          COVERAGE=$(grep -oP 'line-rate="\K[^"]+' coverage.xml || echo "0")
+          COVERAGE=$(grep -oP 'line-rate="\K[^"]+' coverage.xml | head -1 || echo "0")
           COVERAGE_PCT=$(awk "BEGIN {printf \"%.2f\", $COVERAGE * 100}")
 
           MSI=$(grep -oP 'Covered Code MSI:.*?>?\K\d+(?=%)' infection.log || echo "0")
           TESTS=$(grep -oP 'tests="\K\d+' tests.xml | head -1 || echo "0")
+          ASSERTIONS=$(grep -oP 'assertions="\K\d+' tests.xml | head -1 || echo "0")
 
-          if awk "BEGIN {exit !($COVERAGE >= 0.9999)}"; then COLOR="brightgreen";
-          elif awk "BEGIN {exit !($COVERAGE >= 0.9)}"; then COLOR="green";
-          elif awk "BEGIN {exit !($COVERAGE >= 0.8)}"; then COLOR="yellow";
-          elif awk "BEGIN {exit !($COVERAGE >= 0.7)}"; then COLOR="orange";
-          else COLOR="red"; fi
+          MSI_DEC=$(awk "BEGIN {printf \"%.4f\", $MSI / 100}")
+          if awk "BEGIN {exit !($COVERAGE >= 0.9999)}"; then COV_COLOR="brightgreen";
+          elif awk "BEGIN {exit !($COVERAGE >= 0.9)}"; then COV_COLOR="green";
+          elif awk "BEGIN {exit !($COVERAGE >= 0.8)}"; then COV_COLOR="yellow";
+          elif awk "BEGIN {exit !($COVERAGE >= 0.7)}"; then COV_COLOR="orange";
+          else COV_COLOR="red"; fi
+
+          if awk "BEGIN {exit !($MSI_DEC >= 0.9999)}"; then MSI_COLOR="brightgreen";
+          elif awk "BEGIN {exit !($MSI_DEC >= 0.9)}"; then MSI_COLOR="green";
+          elif awk "BEGIN {exit !($MSI_DEC >= 0.8)}"; then MSI_COLOR="yellow";
+          elif awk "BEGIN {exit !($MSI_DEC >= 0.7)}"; then MSI_COLOR="orange";
+          else MSI_COLOR="red"; fi
 
           printf '{"schemaVersion":1,"label":"coverage","message":"%s%%","color":"%s","cacheSeconds":300}\n' \
-            "$COVERAGE_PCT" "$COLOR" > coverage.json
+            "$COVERAGE_PCT" "$COV_COLOR" > coverage.json
           printf '{"schemaVersion":1,"label":"MSI","message":"%s%%","color":"%s","cacheSeconds":300}\n' \
-            "$MSI" "$COLOR" > msi.json
+            "$MSI" "$MSI_COLOR" > msi.json
           printf '{"schemaVersion":1,"label":"tests","message":"%s","color":"blue","cacheSeconds":300}\n' \
             "$TESTS" > tests.json
+          printf '{"schemaVersion":1,"label":"assertions","message":"%s","color":"blue","cacheSeconds":300}\n' \
+            "$ASSERTIONS" > assertions.json
 
       - name: Push to badges branch.
         run: |
@@ -76,6 +86,6 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git checkout --orphan badges
           git rm -rf .
-          git add coverage.json msi.json tests.json
+          git add coverage.json msi.json tests.json assertions.json
           git commit -m "Update badges [skip ci]" || echo "No changes"
           git push -f origin badges
