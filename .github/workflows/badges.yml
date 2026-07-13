@@ -47,7 +47,7 @@ jobs:
         run: vendor/bin/phpunit --coverage-cobertura=coverage.xml --log-junit=tests.xml
 
       - name: Run infection.
-        run: vendor/bin/infection --threads=7 2>&1 | tee infection.log || true
+        run: vendor/bin/infection --threads=$(nproc) 2>&1 | tee infection.log || true
 
       - name: Generate badge JSONs.
         run: |
