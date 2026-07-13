@@ -51,16 +51,16 @@ jobs:
 
       - name: Generate badge JSONs.
         run: |
-          COVERAGE=$(grep -oP 'line-rate="\K[^"]+' coverage.xml)
-          COVERAGE_PCT=$(printf "%.2f" "$(echo "$COVERAGE * 100" | bc -l)")
+          COVERAGE=$(grep -oP 'line-rate="\K[^"]+' coverage.xml || echo "0")
+          COVERAGE_PCT=$(awk "BEGIN {printf \"%.2f\", $COVERAGE * 100}")
 
-          MSI=$(grep 'Covered Code MSI' infection.log | grep -oP '\K\d+(?=%)')
-          TESTS=$(grep -oP 'tests="\K\d+' tests.xml | head -1)
+          MSI=$(grep -oP 'Covered Code MSI:.*?>?\K\d+(?=%)' infection.log || echo "0")
+          TESTS=$(grep -oP 'tests="\K\d+' tests.xml | head -1 || echo "0")
 
-          if [ "$(echo "$COVERAGE >= 0.9999" | bc -l)" -eq 1 ]; then COLOR="brightgreen";
-          elif [ "$(echo "$COVERAGE >= 0.9" | bc -l)" -eq 1 ]; then COLOR="green";
-          elif [ "$(echo "$COVERAGE >= 0.8" | bc -l)" -eq 1 ]; then COLOR="yellow";
-          elif [ "$(echo "$COVERAGE >= 0.7" | bc -l)" -eq 1 ]; then COLOR="orange";
+          if awk "BEGIN {exit !($COVERAGE >= 0.9999)}"; then COLOR="brightgreen";
+          elif awk "BEGIN {exit !($COVERAGE >= 0.9)}"; then COLOR="green";
+          elif awk "BEGIN {exit !($COVERAGE >= 0.8)}"; then COLOR="yellow";
+          elif awk "BEGIN {exit !($COVERAGE >= 0.7)}"; then COLOR="orange";
           else COLOR="red"; fi
 
           printf '{"schemaVersion":1,"label":"coverage","message":"%s%%","color":"%s","cacheSeconds":300}\n' \
