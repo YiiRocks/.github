@@ -1,0 +1,81 @@
+name: badges
+
+on:
+  workflow_call:
+    inputs:
+      php-extensions:
+        description: 'Comma-separated PHP extensions to install.'
+        required: false
+        type: string
+        default: fileinfo
+
+permissions:
+  contents: write
+
+jobs:
+  badges:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout.
+        uses: actions/checkout@v7
+
+      - name: Install PHP with extensions.
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: ${{ inputs.php-extensions }}
+          coverage: pcov
+          ini-values: date.timezone='UTC'
+
+      - name: Determine composer cache directory.
+        shell: bash
+        run: echo "COMPOSER_CACHE_DIR=$(composer config cache-dir)" >> $GITHUB_ENV
+
+      - name: Cache dependencies.
+        uses: actions/cache@v6
+        with:
+          path: ${{ env.COMPOSER_CACHE_DIR }}
+          key: php8.3-composer-${{ hashFiles('composer.json') }}
+          restore-keys: |
+            php8.3-composer-
+
+      - name: Install dependencies with Composer.
+        run: composer update --prefer-dist --no-interaction --no-progress --optimize-autoloader --ansi
+
+      - name: Run tests with coverage.
+        run: vendor/bin/phpunit --coverage-cobertura=coverage.xml --log-junit=tests.xml
+
+      - name: Run infection.
+        run: vendor/bin/infection --threads=7 2>&1 | tee infection.log || true
+
+      - name: Generate badge JSONs.
+        run: |
+          COVERAGE=$(grep -oP 'line-rate="\K[^"]+' coverage.xml)
+          COVERAGE_PCT=$(printf "%.2f" "$(echo "$COVERAGE * 100" | bc -l)")
+
+          MSI=$(grep 'Covered Code MSI' infection.log | grep -oP '\K\d+(?=%)')
+          TESTS=$(grep -oP 'tests="\K\d+' tests.xml | head -1)
+
+          if [ "$(echo "$COVERAGE >= 0.9999" | bc -l)" -eq 1 ]; then COLOR="brightgreen";
+          elif [ "$(echo "$COVERAGE >= 0.9" | bc -l)" -eq 1 ]; then COLOR="green";
+          elif [ "$(echo "$COVERAGE >= 0.8" | bc -l)" -eq 1 ]; then COLOR="yellow";
+          elif [ "$(echo "$COVERAGE >= 0.7" | bc -l)" -eq 1 ]; then COLOR="orange";
+          else COLOR="red"; fi
+
+          printf '{"schemaVersion":1,"label":"coverage","message":"%s%%","color":"%s","cacheSeconds":300}\n' \
+            "$COVERAGE_PCT" "$COLOR" > coverage.json
+          printf '{"schemaVersion":1,"label":"MSI","message":"%s%%","color":"%s","cacheSeconds":300}\n' \
+            "$MSI" "$COLOR" > msi.json
+          printf '{"schemaVersion":1,"label":"tests","message":"%s","color":"blue","cacheSeconds":300}\n' \
+            "$TESTS" > tests.json
+
+      - name: Push to badges branch.
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan badges
+          git rm -rf .
+          git add coverage.json msi.json tests.json
+          git commit -m "Update badges [skip ci]" || echo "No changes"
+          git push -f origin badges
