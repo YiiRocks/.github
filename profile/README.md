@@ -1,5 +1,5 @@
 # Yii.Rocks
-[![Yii.Rocks](https://www.yii.rocks/assets/images/logo.svg)](https://www.yii.rocks/)
+[![Yii.Rocks](yiirocks.png)](https://www.yii.rocks/)
 
 ## Small, focused libraries that drop straight into your [Yii Framework](https://www.yiiframework.com/) apps.
 
