@@ -1,7 +1,9 @@
 # Yii.Rocks
 [![Yii.Rocks](yiirocks.png)](https://www.yii.rocks/)
 
-## Small, focused libraries that drop straight into your [Yii Framework](https://www.yiiframework.com/) apps.
+## The missing pieces for your Yii3 projects.
+
+### Small, focused libraries that drop straight into your [Yii](https://www.yiiframework.com/) apps.
 
 Hello! Welcome to **Yii.Rocks** - the missing pieces for your Yii projects. Every package here is open-source, and built to do one thing well instead of dragging in a framework-within-a-framework.
 
