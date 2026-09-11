@@ -92,7 +92,7 @@ jobs:
           fi
 
       - name: Install Composer dependencies.
-        uses: ramsey/composer-install@4
+        uses: ramsey/composer-install@v4
 
       - name: Static analysis.
         run: vendor/bin/psalm --config="psalm.xml" --shepherd --stats --output-format=github --php-version="${{ matrix.php }}"
