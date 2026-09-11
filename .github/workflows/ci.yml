@@ -47,6 +47,14 @@ jobs:
           restore-keys: |
             php${{ matrix.php }}-composer-
 
+      - name: Determine Composer root version.
+        shell: bash
+        run: |
+          version="$(composer config extra.branch-alias.dev-main 2>/dev/null || true)"
+          if [ -n "$version" ]; then
+            echo "COMPOSER_ROOT_VERSION=$version" >> "$GITHUB_ENV"
+          fi
+
       - name: Install dependencies with Composer.
         run: composer update --prefer-dist --no-interaction --no-progress --optimize-autoloader --ansi
 
@@ -54,9 +62,37 @@ jobs:
         run: vendor/bin/phpunit --colors=always
 
   psalm:
-    uses: yiisoft/actions/.github/workflows/psalm.yml@master
-    with:
-      os: >-
-        ['ubuntu-latest']
-      php: >-
-        ['8.3', '8.4', '8.5']
+    name: PHP ${{ matrix.php }}-ubuntu-latest
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        php: ['8.3', '8.4', '8.5']
+
+    steps:
+      - name: Checkout.
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Install PHP with extensions.
+        uses: shivammathur/setup-php@v2
+        with:
+          coverage: none
+          extensions: ${{ inputs.php-extensions }}
+          php-version: ${{ matrix.php }}
+          tools: cs2pr
+
+      - name: Determine Composer root version.
+        shell: bash
+        run: |
+          version="$(composer config extra.branch-alias.dev-main 2>/dev/null || true)"
+          if [ -n "$version" ]; then
+            echo "COMPOSER_ROOT_VERSION=$version" >> "$GITHUB_ENV"
+          fi
+
+      - name: Install Composer dependencies.
+        uses: ramsey/composer-install@4
+
+      - name: Static analysis.
+        run: vendor/bin/psalm --config="psalm.xml" --shepherd --stats --output-format=github --php-version="${{ matrix.php }}"
